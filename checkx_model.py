@@ -243,19 +243,29 @@ def _random_pattern_strict(num_black_range=(10, 12)) -> Optional[List[List[bool]
 def _pick_pattern() -> List[List[bool]]:
     """Pioche un pattern de cases noires.
 
-    Méthode principale : **génération incrémentale aléatoire**, validée par
-    le solveur complet. Produit des patterns vraiment distincts à l'infini.
-    Templates utilisés uniquement en secours si l'incrémental échoue.
+    Stratégie optimisée pour la réactivité GUI :
+    - Méthode principale : templates (statiques + dynamiques déjà validés)
+      + symétries D4 → très rapide (~0.3s)
+    - Occasionnellement (15%) : tenter un nouveau pattern incrémental
+      aléatoire; s'il réussit, l'ajouter au cache dynamique pour usage futur
+    - La diversité reste grande grâce au cache `_DYNAMIC_TEMPLATES` qui
+      croît au fil du temps (chaque nouveau pattern incrémental enrichit
+      la bibliothèque).
     """
-    # Méthode principale : incrémentale (aléatoire, infinie)
-    new_pat = generate_pattern_incremental(max_tries=8)
-    if new_pat is not None:
-        _DYNAMIC_TEMPLATES.append(new_pat)
-        return new_pat
+    # 15% du temps : tenter une génération incrémentale neuve
+    if random.random() < 0.15:
+        new_pat = generate_pattern_incremental(max_tries=3)
+        if new_pat is not None:
+            _DYNAMIC_TEMPLATES.append(new_pat)
+            return new_pat
 
-    # Secours : template PDF + symétrie
-    s = random.choice(_TEMPLATE_PATTERNS)
-    base = _parse_template(s)
+    # Cas normal : tirer dans les templates (statiques + dynamiques)
+    if _DYNAMIC_TEMPLATES and random.random() < 0.5:
+        base = random.choice(_DYNAMIC_TEMPLATES)
+    else:
+        s = random.choice(_TEMPLATE_PATTERNS)
+        base = _parse_template(s)
+
     rot = random.randint(0, 3)
     fh = random.random() < 0.5
     fv = random.random() < 0.5
