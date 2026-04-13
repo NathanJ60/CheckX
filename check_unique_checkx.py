@@ -124,11 +124,12 @@ def verify_constraints(puzzle, verbose: bool = False):
     Contraintes:
     1. Entre 10 et 12 cases noires
     2. Cases blanches 4-connectées
-    3. Tout segment ≥2 cases somme à 10 (via la solution)
-    4. Max floor(len/2) indices par segment
-    5. Solution unique
+    3. Aucune paire de cases noires 4-adjacentes (touchement diagonal seul)
+    4. Tout segment ≥2 cases somme à 10 (via la solution)
+    5. Max floor(len/2) indices par segment
+    6. Solution unique
     """
-    from checkx_model import _white_connected, _max_hints_per_segment
+    from checkx_model import _white_connected, _max_hints_per_segment, _no_adjacent_blacks
 
     blacks = puzzle['blacks']
     hints = puzzle['hints']
@@ -145,6 +146,10 @@ def verify_constraints(puzzle, verbose: bool = False):
     # [2] Connectivité des blanches
     if not _white_connected(blacks):
         errors.append("cases blanches non 4-connectées")
+
+    # [3] Pas de cases noires 4-adjacentes
+    if not _no_adjacent_blacks(blacks):
+        errors.append("cases noires 4-adjacentes (interdit, seulement diagonale)")
 
     # [3] Somme 10 par segment
     for sid, seg in enumerate(segments):

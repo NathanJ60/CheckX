@@ -198,6 +198,9 @@ def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) 
         for (r, c) in cells:
             if placed >= target:
                 break
+            # Refuser si une noire est déjà 4-adjacente (pas de clusters)
+            if _adjacent_black_exists(blacks, r, c):
+                continue
             blacks[r][c] = True
             if not _white_connected(blacks):
                 blacks[r][c] = False
@@ -272,6 +275,33 @@ def _pick_pattern() -> List[List[bool]]:
     return _transform_pattern(base, rot, fh, fv)
 
 
+def _no_adjacent_blacks(blacks) -> bool:
+    """Vérifie qu'aucune paire de cases noires n'est 4-adjacente.
+
+    Les cases noires peuvent se toucher uniquement en diagonale (comme dans
+    les exemples officiels du PDF). Cette contrainte préserve la dynamique
+    de jeu en évitant des "blocs" de cases noires.
+    """
+    for r in range(GRID):
+        for c in range(GRID):
+            if not blacks[r][c]:
+                continue
+            if r + 1 < GRID and blacks[r + 1][c]:
+                return False
+            if c + 1 < GRID and blacks[r][c + 1]:
+                return False
+    return True
+
+
+def _adjacent_black_exists(blacks, r, c) -> bool:
+    """Renvoie True si placer une noire en (r,c) en touchera une autre."""
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        nr, nc = r + dr, c + dc
+        if 0 <= nr < GRID and 0 <= nc < GRID and blacks[nr][nc]:
+            return True
+    return False
+
+
 def _each_row_col_has_black(blacks) -> bool:
     for r in range(GRID):
         if not any(blacks[r]):
@@ -287,6 +317,7 @@ def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Option
     - 10 à 12 cases noires
     - cases blanches 4-connectées
     - au moins une case noire par ligne et par colonne (améliore feasibilité)
+    - AUCUNE paire de cases noires 4-adjacentes (touchement diagonal seulement)
     """
     lo, hi = num_black_range
     for _ in range(max_attempts):
@@ -298,6 +329,9 @@ def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Option
         for r, c in cells:
             if placed >= n:
                 break
+            # Refuser si une noire adjacente existe déjà
+            if _adjacent_black_exists(blacks, r, c):
+                continue
             blacks[r][c] = True
             if not _white_connected(blacks):
                 blacks[r][c] = False
@@ -676,6 +710,9 @@ def verify_puzzle(puzzle) -> bool:
             return False
     if not _white_connected(blacks):
         print("❌ Cases blanches non connectées")
+        return False
+    if not _no_adjacent_blacks(blacks):
+        print("❌ Cases noires 4-adjacentes (interdit)")
         return False
     n = count_solutions(hints, blacks, segments, cell_to_segs, limit=2)
     if n != 1:
