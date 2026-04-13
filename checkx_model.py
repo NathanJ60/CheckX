@@ -93,7 +93,7 @@ def _white_connected(blacks) -> bool:
 # =============================================================================
 
 # Format compact: chaîne 64 chars, '.' = blanc, '#' = noir
-# Templates tirés du PDF officiel (grilles connues faisables).
+# Templates tirés du PDF officiel, respectant la contrainte 10-12 cases noires.
 _TEMPLATE_PATTERNS = [
     # Template 1 : PDF top-right (11 noirs)
     (
@@ -105,17 +105,6 @@ _TEMPLATE_PATTERNS = [
         "#.#....#"
         "....#..."
         ".#.#...."
-    ),
-    # Template 2 : PDF bottom-right (13 noirs)
-    (
-        "....#..."
-        "..#....#"
-        "........"
-        ".#...#.."
-        "#..#..#."
-        "..#....."
-        ".#..#..."
-        "...#...#"
     ),
 ]
 
@@ -175,6 +164,60 @@ def _discover_random_feasible_pattern(max_tries: int = 50) -> Optional[List[List
     return None
 
 
+def _is_partial_feasible(blacks) -> bool:
+    """Vérifie via propagation qu'un pattern partiel n'est pas encore infaisable."""
+    segments, cell_to_segs = compute_segments(blacks)
+    if not segments:
+        return True
+    if any(len(_VALID_TUPLES.get(len(s), [])) == 0 for s in segments):
+        return False
+    empty = [[0 if not blacks[r][c] else None for c in range(GRID)] for r in range(GRID)]
+    domains, seg_tuples = _initial_domains(blacks, segments, cell_to_segs, empty)
+    return _propagate(domains, segments, cell_to_segs, seg_tuples)
+
+
+def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) -> Optional[List[List[bool]]]:
+    """Construit un pattern de cases noires de manière incrémentale.
+
+    Chaque case noire est ajoutée seulement si:
+    - les cases blanches restent 4-connectées
+    - le pattern partiel reste faisable (vérifié par propagation)
+
+    Validation finale par solveur complet avec petit budget (pour rejeter
+    les false positives de la propagation).
+    """
+    lo, hi = num_black_range
+    for _ in range(max_tries):
+        target = random.randint(lo, hi)
+        blacks = [[False] * GRID for _ in range(GRID)]
+        placed = 0
+
+        cells = [(r, c) for r in range(GRID) for c in range(GRID)]
+        random.shuffle(cells)
+
+        for (r, c) in cells:
+            if placed >= target:
+                break
+            blacks[r][c] = True
+            if not _white_connected(blacks):
+                blacks[r][c] = False
+                continue
+            if not _is_partial_feasible(blacks):
+                blacks[r][c] = False
+                continue
+            placed += 1
+
+        if placed < lo:
+            continue
+
+        # Validation finale par solveur complet (budget limité)
+        segments, cell_to_segs = compute_segments(blacks)
+        sol = solve_one(blacks, segments, cell_to_segs, max_nodes=5000)
+        if sol is not None:
+            return blacks
+    return None
+
+
 def _random_pattern_strict(num_black_range=(10, 12)) -> Optional[List[List[bool]]]:
     """Génère un pattern aléatoire avec contraintes (connecté, row/col)."""
     lo, hi = num_black_range
@@ -198,26 +241,19 @@ def _random_pattern_strict(num_black_range=(10, 12)) -> Optional[List[List[bool]
 
 
 def _pick_pattern() -> List[List[bool]]:
-    """Pioche un pattern: principalement via templates, parfois via fallback aléatoire."""
-    # Avec probabilité 85% → templates (rapide, diversité via symétries+digits)
-    # Sinon tenter d'étendre la bibliothèque avec un nouveau pattern aléatoire
-    if random.random() < 0.85 or not _DYNAMIC_TEMPLATES:
-        # Si on a des dynamiques, tirer parmi tous
-        if _DYNAMIC_TEMPLATES and random.random() < 0.3:
-            base = random.choice(_DYNAMIC_TEMPLATES)
-        else:
-            s = random.choice(_TEMPLATE_PATTERNS)
-            base = _parse_template(s)
-        rot = random.randint(0, 3)
-        fh = random.random() < 0.5
-        fv = random.random() < 0.5
-        return _transform_pattern(base, rot, fh, fv)
-    # Tenter de découvrir un nouveau pattern
-    new_pat = _discover_random_feasible_pattern(max_tries=30)
+    """Pioche un pattern de cases noires.
+
+    Méthode principale : **génération incrémentale aléatoire**, validée par
+    le solveur complet. Produit des patterns vraiment distincts à l'infini.
+    Templates utilisés uniquement en secours si l'incrémental échoue.
+    """
+    # Méthode principale : incrémentale (aléatoire, infinie)
+    new_pat = generate_pattern_incremental(max_tries=8)
     if new_pat is not None:
         _DYNAMIC_TEMPLATES.append(new_pat)
         return new_pat
-    # Fallback template standard
+
+    # Secours : template PDF + symétrie
     s = random.choice(_TEMPLATE_PATTERNS)
     base = _parse_template(s)
     rot = random.randint(0, 3)
