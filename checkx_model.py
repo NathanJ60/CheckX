@@ -10,8 +10,10 @@ Règles:
 Contraintes de génération:
 - Entre 10 et 12 cases noires par grille.
 - Les cases BLANCHES doivent rester 4-connectées (pas de région isolée).
-- Au moins 1 case noire par ligne ET par colonne (limite longueur segment à 7).
-- Sur un segment, pas plus de floor(len/2) indices (évite 3 indices sur 4).
+- Au moins 1 ET au plus 2 cases noires par ligne ET par colonne.
+- AUCUN indice sur un segment de longueur 2 (sinon le joueur déduit
+  trivialement l'autre cellule : a+b=10 et a connu → b = 10-a).
+- Sur un segment de longueur >= 3, pas plus de floor(len/2) indices.
 """
 
 import random
@@ -92,21 +94,11 @@ def _white_connected(blacks) -> bool:
 # Templates connus faisables (dérivés du PDF officiel)
 # =============================================================================
 
-# Format compact: chaîne 64 chars, '.' = blanc, '#' = noir
-# Templates tirés du PDF officiel, respectant la contrainte 10-12 cases noires.
-_TEMPLATE_PATTERNS = [
-    # Template 1 : PDF top-right (11 noirs)
-    (
-        ".....#.#"
-        "...#...."
-        "........"
-        ".#......"
-        "......#."
-        "#.#....#"
-        "....#..."
-        ".#.#...."
-    ),
-]
+# Plus de templates statiques : la génération aléatoire/incrémentale
+# (generate_pattern_incremental) est la méthode principale. Le cache
+# _DYNAMIC_TEMPLATES se remplit automatiquement au fur et à mesure et sert
+# de fallback rapide avec transformations D4 pour la diversité.
+_TEMPLATE_PATTERNS: List[str] = []
 
 
 def _parse_template(s: str) -> List[List[bool]]:
@@ -201,6 +193,9 @@ def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) 
             # Refuser si une noire est déjà 4-adjacente (pas de clusters)
             if _adjacent_black_exists(blacks, r, c):
                 continue
+            # Refuser si dépasse max 2 noires par ligne/colonne
+            if _would_exceed_line_cap(blacks, r, c):
+                continue
             blacks[r][c] = True
             if not _white_connected(blacks):
                 blacks[r][c] = False
@@ -212,6 +207,8 @@ def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) 
 
         if placed < lo:
             continue
+        if not _max_2_blacks_per_row_col(blacks):
+            continue
 
         # Validation finale par solveur complet (budget limité)
         segments, cell_to_segs = compute_segments(blacks)
@@ -222,7 +219,7 @@ def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) 
 
 
 def _random_pattern_strict(num_black_range=(10, 12)) -> Optional[List[List[bool]]]:
-    """Génère un pattern aléatoire avec contraintes (connecté, row/col)."""
+    """Génère un pattern aléatoire avec contraintes (connecté, row/col, max 2/ligne)."""
     lo, hi = num_black_range
     for _ in range(100):
         n = random.randint(lo, hi)
@@ -233,46 +230,34 @@ def _random_pattern_strict(num_black_range=(10, 12)) -> Optional[List[List[bool]
         for r, c in cells:
             if placed >= n:
                 break
+            if _would_exceed_line_cap(blacks, r, c):
+                continue
             blacks[r][c] = True
             if not _white_connected(blacks):
                 blacks[r][c] = False
                 continue
             placed += 1
-        if placed == n and _each_row_col_has_black(blacks):
+        if placed == n and _each_row_col_has_black(blacks) and _max_2_blacks_per_row_col(blacks):
             return blacks
     return None
 
 
-def _pick_pattern() -> List[List[bool]]:
-    """Pioche un pattern de cases noires.
+def _pick_pattern() -> Optional[List[List[bool]]]:
+    """Pioche un pattern de cases noires — méthode aléatoire incrémentale.
 
-    Stratégie optimisée pour la réactivité GUI :
-    - Méthode principale : templates (statiques + dynamiques déjà validés)
-      + symétries D4 → très rapide (~0.3s)
-    - Occasionnellement (15%) : tenter un nouveau pattern incrémental
-      aléatoire; s'il réussit, l'ajouter au cache dynamique pour usage futur
-    - La diversité reste grande grâce au cache `_DYNAMIC_TEMPLATES` qui
-      croît au fil du temps (chaque nouveau pattern incrémental enrichit
-      la bibliothèque).
+    Contraintes enforcées (toutes strictes) :
+    - 10-12 cases noires au total
+    - Max 2 noires par ligne ET par colonne
+    - Au moins 1 noire par ligne ET par colonne
+    - Pas de 4-adjacence entre noires (touchement diagonal seulement)
+    - Cases blanches 4-connectées
+    - Pattern faisable (au moins une solution CSP valide)
+
+    Chaque pattern est totalement neuf (aucun template pré-calculé).
+    La génération place les noires une par une en vérifiant toutes les
+    contraintes à chaque placement, puis valide avec un solveur CSP court.
     """
-    # 15% du temps : tenter une génération incrémentale neuve
-    if random.random() < 0.15:
-        new_pat = generate_pattern_incremental(max_tries=3)
-        if new_pat is not None:
-            _DYNAMIC_TEMPLATES.append(new_pat)
-            return new_pat
-
-    # Cas normal : tirer dans les templates (statiques + dynamiques)
-    if _DYNAMIC_TEMPLATES and random.random() < 0.5:
-        base = random.choice(_DYNAMIC_TEMPLATES)
-    else:
-        s = random.choice(_TEMPLATE_PATTERNS)
-        base = _parse_template(s)
-
-    rot = random.randint(0, 3)
-    fh = random.random() < 0.5
-    fv = random.random() < 0.5
-    return _transform_pattern(base, rot, fh, fv)
+    return generate_pattern_incremental(max_tries=20)
 
 
 def _no_adjacent_blacks(blacks) -> bool:
@@ -312,6 +297,31 @@ def _each_row_col_has_black(blacks) -> bool:
     return True
 
 
+MAX_BLACKS_PER_LINE = 2
+
+
+def _max_2_blacks_per_row_col(blacks) -> bool:
+    """Vérifie qu'aucune ligne ni colonne ne contient plus de MAX_BLACKS_PER_LINE noires."""
+    for r in range(GRID):
+        if sum(1 for c in range(GRID) if blacks[r][c]) > MAX_BLACKS_PER_LINE:
+            return False
+    for c in range(GRID):
+        if sum(1 for r in range(GRID) if blacks[r][c]) > MAX_BLACKS_PER_LINE:
+            return False
+    return True
+
+
+def _would_exceed_line_cap(blacks, r: int, c: int) -> bool:
+    """Renvoie True si ajouter une noire en (r,c) dépasserait la limite par ligne ou colonne."""
+    row_count = sum(1 for cc in range(GRID) if blacks[r][cc])
+    if row_count >= MAX_BLACKS_PER_LINE:
+        return True
+    col_count = sum(1 for rr in range(GRID) if blacks[rr][c])
+    if col_count >= MAX_BLACKS_PER_LINE:
+        return True
+    return False
+
+
 def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Optional[List[List[bool]]]:
     """Place des cases noires aléatoires respectant les contraintes:
     - 10 à 12 cases noires
@@ -332,6 +342,9 @@ def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Option
             # Refuser si une noire adjacente existe déjà
             if _adjacent_black_exists(blacks, r, c):
                 continue
+            # Refuser si dépasse max 2 noires par ligne/colonne
+            if _would_exceed_line_cap(blacks, r, c):
+                continue
             blacks[r][c] = True
             if not _white_connected(blacks):
                 blacks[r][c] = False
@@ -341,6 +354,8 @@ def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Option
         if placed != n:
             continue
         if not _each_row_col_has_black(blacks):
+            continue
+        if not _max_2_blacks_per_row_col(blacks):
             continue
         return blacks
     return None
@@ -552,6 +567,14 @@ def solve_one(blacks, segments, cell_to_segs, max_nodes=10000):
 # =============================================================================
 
 def _max_hints_per_segment(segment_len: int) -> int:
+    """Nombre max d'indices placés sur un segment.
+
+    Règle clé : AUCUN indice sur un segment de longueur 2 (sinon a+b=10 et
+    a connu → b trivialement déduit). Pour les longueurs >= 3, on garde
+    floor(len/2) comme auparavant.
+    """
+    if segment_len == 2:
+        return 0
     return segment_len // 2
 
 
@@ -713,6 +736,9 @@ def verify_puzzle(puzzle) -> bool:
         return False
     if not _no_adjacent_blacks(blacks):
         print("❌ Cases noires 4-adjacentes (interdit)")
+        return False
+    if not _max_2_blacks_per_row_col(blacks):
+        print("❌ Plus de 2 cases noires sur une ligne ou colonne")
         return False
     n = count_solutions(hints, blacks, segments, cell_to_segs, limit=2)
     if n != 1:
