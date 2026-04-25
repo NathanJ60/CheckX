@@ -1,6 +1,6 @@
-# Check X
+# Check 10
 
-Générateur de puzzles Check X : grille 8×8 où chaque segment de ≥2 cases consécutives (entre cases noires ou bords) doit sommer à 10.
+Générateur de puzzles Check 10 : grille 8×8 où chaque segment de ≥2 cases consécutives (entre cases noires ou bords) doit sommer à 10.
 
 ## Règles
 
@@ -26,10 +26,10 @@ Générateur de puzzles Check X : grille 8×8 où chaque segment de ≥2 cases c
 ## Architecture
 
 ```
-checkx_model.py            Générateur + solveur CSP par propagation + templates
-checkx_model_history.py    Historique persistant hash-based
-checkx_visualization.py    Rendu PNG (noir et blanc, style PDF officiel)
-checkx_gui.py              Interface PyQt5
+check10_model.py            Générateur + solveur CSP par propagation + templates
+check10_model_history.py    Historique persistant hash-based
+check10_visualization.py    Rendu PNG (noir et blanc, style PDF officiel)
+check10_gui.py              Interface PyQt5
 consigne/                  Règles officielles (PDF)
 design/                    Screenshots de référence
 ```
@@ -50,23 +50,23 @@ design/                    Screenshots de référence
 python -m venv venv
 source venv/bin/activate
 pip install PyQt5 Pillow
-python checkx_gui.py
+python check10_gui.py
 ```
 
 Ou en ligne de commande :
 
 ```python
-from checkx_model import generate_puzzle, verify_puzzle
-from checkx_visualization import draw_checkx
+from check10_model import generate_puzzle, verify_puzzle
+from check10_visualization import draw_check10
 
 puzzle = generate_puzzle("moyen")
 verify_puzzle(puzzle)
-draw_checkx(puzzle, "mon_puzzle")
+draw_check10(puzzle, "mon_puzzle")
 ```
 
 ## Garantie d'unicité
 
 Chaque puzzle a une **solution unique** vérifiée par le solveur avant retour. La diversité est assurée par :
-- L'historique persistant (`data/checkx_history.json`) qui rejette les doublons entre appels
+- L'historique persistant (`data/check10_history.json`) qui rejette les doublons entre appels
 - La randomisation des chiffres via le solveur (chaque pattern admet des centaines de solutions différentes)
 - Le fallback aléatoire pour découvrir de nouveaux patterns au-delà des templates

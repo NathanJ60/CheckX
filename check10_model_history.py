@@ -1,4 +1,4 @@
-"""Historique persistant des puzzles Check X générés."""
+"""Historique persistant des puzzles Check 10 générés."""
 import os
 import json
 import hashlib
@@ -7,7 +7,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
-HISTORY_FILE = DATA_DIR / "checkx_history.json"
+HISTORY_FILE = DATA_DIR / "check10_history.json"
 
 
 def _flat_values(values):

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""checkx_visualization.py - Rendu des puzzles Check X (PNG/SVG/PDF)."""
+"""check10_visualization.py - Rendu des puzzles Check 10 (PNG/SVG/PDF)."""
 
 from PIL import Image, ImageDraw, ImageFont
 from enum import Enum
 import os
 
-from checkx_model import GRID
+from check10_model import GRID
 
 try:
     import svgwrite
@@ -85,7 +85,7 @@ def _load_font(size):
 # PNG
 # =============================================================================
 
-def draw_checkx(puzzle, base_path="checkx_grid", theme=Theme.CLASSIC):
+def draw_check10(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
     """Génère les images PNG (solution + puzzle).
 
     Retourne [solution_path, puzzle_path].
@@ -146,7 +146,7 @@ def draw_checkx(puzzle, base_path="checkx_grid", theme=Theme.CLASSIC):
 # SVG
 # =============================================================================
 
-def draw_checkx_svg(puzzle, base_path="checkx_grid", theme=Theme.CLASSIC):
+def draw_check10_svg(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
     if not SVG_AVAILABLE:
         raise ImportError("svgwrite non installé")
     palette = _get_palette(theme)
@@ -199,7 +199,7 @@ def draw_checkx_svg(puzzle, base_path="checkx_grid", theme=Theme.CLASSIC):
 # PDF
 # =============================================================================
 
-def draw_checkx_pdf(puzzle, base_path="checkx_grid", theme=Theme.CLASSIC):
+def draw_check10_pdf(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
     if not PDF_AVAILABLE:
         raise ImportError("reportlab non installé")
     palette = _get_palette(theme)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""checkx_model.py - Générateur de puzzles Check X.
+"""check10_model.py - Générateur de puzzles Check 10.
 
 Règles:
 - Grille 8×8, cases blanches à remplir avec 1..6, cases noires = séparateurs.
@@ -21,7 +21,7 @@ from collections import deque
 from itertools import product
 from typing import List, Tuple, Optional
 
-from checkx_model_history import is_unique as hist_unique, add_to_history
+from check10_model_history import is_unique as hist_unique, add_to_history
 
 GRID = 8
 TARGET_SUM = 10
@@ -744,7 +744,7 @@ def verify_puzzle(puzzle) -> bool:
     if n != 1:
         print(f"❌ {n} solutions")
         return False
-    print(f"✅ Check X valide (noires={puzzle['num_blacks']}, indices={puzzle['num_hints']})")
+    print(f"✅ Check 10 valide (noires={puzzle['num_blacks']}, indices={puzzle['num_hints']})")
     return True
 
 
@@ -763,7 +763,7 @@ def print_puzzle(puzzle):
 
 if __name__ == "__main__":
     import time
-    print("Génération Check X moyenne...")
+    print("Génération Check 10 moyenne...")
     t0 = time.time()
     p = generate_puzzle("moyen", enforce_unique_history=False)
     print(f"time: {time.time()-t0:.2f}s")

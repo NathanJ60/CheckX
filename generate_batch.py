@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Génère des grilles Check X par niveau et écrit les PNG dans output/."""
+"""Génère des grilles Check 10 par niveau et écrit les PNG dans output/."""
 
 import os
 import sys
 import time
 
-from checkx_model import (
+from check10_model import (
     generate_puzzle, verify_puzzle, _max_2_blacks_per_row_col,
     _max_hints_per_segment, GRID,
 )
-from checkx_visualization import draw_checkx
+from check10_visualization import draw_check10
 
 
 def run(n_per_level: int = 5, out_dir: str = "output"):
@@ -35,8 +35,8 @@ def run(n_per_level: int = 5, out_dir: str = "output"):
                 if len(seg) == 2:
                     len2_hints += sum(1 for (r, c) in seg if p["hints"][r][c] != 0)
 
-            base = os.path.join(out_dir, f"CheckX_{difficulty}_{i+1:02d}")
-            draw_checkx(p, base)
+            base = os.path.join(out_dir, f"Check10_{difficulty}_{i+1:02d}")
+            draw_check10(p, base)
 
             status = "✅" if (valid and max2_ok and len2_hints == 0) else "❌"
             print(f"  [{i+1:02d}] {status} noires={p['num_blacks']} indices={p['num_hints']} "

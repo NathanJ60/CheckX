@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Vérification d'unicité dédiée pour Check X.
+"""Vérification d'unicité dédiée pour Check 10.
 
 Module séparé (comme check_unique_go8.py pour 8-GO), il fournit une API
-dédiée pour vérifier qu'un puzzle Check X a **exactement une solution**
+dédiée pour vérifier qu'un puzzle Check 10 a **exactement une solution**
 (pas zéro, pas plusieurs), indépendamment du générateur.
 
 Approche en deux phases:
@@ -13,7 +13,7 @@ Approche en deux phases:
 import time
 from typing import List, Optional
 
-from checkx_model import (
+from check10_model import (
     GRID, TARGET_SUM, DIGITS,
     compute_segments, count_solutions, _solve,
 )
@@ -21,7 +21,7 @@ from checkx_model import (
 
 def check_uniqueness(blacks, hints, original_solution=None,
                      timeout: float = 30.0, verbose: bool = False):
-    """Vérifie si le puzzle Check X a une solution unique.
+    """Vérifie si le puzzle Check 10 a une solution unique.
 
     Args:
         blacks: grille booléenne (True = case noire)
@@ -119,7 +119,7 @@ def check_uniqueness(blacks, hints, original_solution=None,
 
 
 def verify_constraints(puzzle, verbose: bool = False):
-    """Vérifie que toutes les contraintes Check X sont respectées.
+    """Vérifie que toutes les contraintes Check 10 sont respectées.
 
     Contraintes:
     1. Entre 10 et 12 cases noires
@@ -129,7 +129,7 @@ def verify_constraints(puzzle, verbose: bool = False):
     5. Max floor(len/2) indices par segment
     6. Solution unique
     """
-    from checkx_model import _white_connected, _max_hints_per_segment, _no_adjacent_blacks
+    from check10_model import _white_connected, _max_hints_per_segment, _no_adjacent_blacks
 
     blacks = puzzle['blacks']
     hints = puzzle['hints']
@@ -182,10 +182,10 @@ def verify_constraints(puzzle, verbose: bool = False):
 
 
 if __name__ == "__main__":
-    from checkx_model import generate_puzzle
+    from check10_model import generate_puzzle
 
     print("=" * 60)
-    print("Test d'unicité Check X")
+    print("Test d'unicité Check 10")
     print("=" * 60)
 
     for diff in ["difficile", "moyen", "facile"]:

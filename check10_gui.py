@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""checkx_gui.py - Interface graphique complète Check X.
+"""check10_gui.py - Interface graphique complète Check 10.
 
 Features: génération, difficulté, export PNG/SVG/PDF/XML, thèmes,
 personnalisation des couleurs.
@@ -21,9 +21,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPixmap, QFont, QColor
 from PyQt5.QtCore import Qt
 
-from checkx_model import generate_puzzle, verify_puzzle, GRID
-from checkx_visualization import (
-    draw_checkx, draw_checkx_svg, draw_checkx_pdf,
+from check10_model import generate_puzzle, verify_puzzle, GRID
+from check10_visualization import (
+    draw_check10, draw_check10_svg, draw_check10_pdf,
     Theme, _THEME_STYLES, SVG_AVAILABLE, PDF_AVAILABLE,
 )
 
@@ -34,10 +34,10 @@ class DifficultyLevel(Enum):
     DIFFICILE = "difficile"
 
 
-class CheckXApp(QMainWindow):
+class Check10App(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Check X Generator")
+        self.setWindowTitle("Check 10 Generator")
         self.setMinimumSize(700, 800)
         self.resize(900, 1000)
         self.puzzle = None
@@ -52,7 +52,7 @@ class CheckXApp(QMainWindow):
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
 
-        title = QLabel("Générateur Check X")
+        title = QLabel("Générateur Check 10")
         title.setFont(QFont("Arial", 18, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
@@ -131,10 +131,10 @@ class CheckXApp(QMainWindow):
 
     def on_theme_changed(self):
         if self.puzzle:
-            temp = "temp_checkx"
+            temp = "temp_check10"
             os.makedirs(temp, exist_ok=True)
-            self.image_paths = draw_checkx(
-                self.puzzle, os.path.join(temp, "checkx"), theme=self._selected_theme()
+            self.image_paths = draw_check10(
+                self.puzzle, os.path.join(temp, "check10"), theme=self._selected_theme()
             )
             self._update_display()
 
@@ -157,10 +157,10 @@ class CheckXApp(QMainWindow):
             self.puzzle = puzzle
             verify_puzzle(puzzle)
 
-            temp = "temp_checkx"
+            temp = "temp_check10"
             os.makedirs(temp, exist_ok=True)
-            self.image_paths = draw_checkx(
-                puzzle, os.path.join(temp, "checkx"), theme=self._selected_theme()
+            self.image_paths = draw_check10(
+                puzzle, os.path.join(temp, "check10"), theme=self._selected_theme()
             )
             self._update_display()
         except Exception as e:
@@ -179,13 +179,13 @@ class CheckXApp(QMainWindow):
 
     # -------------------- Export --------------------
     def save_grid_png(self):
-        self._save_format("PNG", ".png", draw_checkx)
+        self._save_format("PNG", ".png", draw_check10)
 
     def save_grid_svg(self):
-        self._save_format("SVG", ".svg", draw_checkx_svg)
+        self._save_format("SVG", ".svg", draw_check10_svg)
 
     def save_grid_pdf(self):
-        self._save_format("PDF", ".pdf", draw_checkx_pdf)
+        self._save_format("PDF", ".pdf", draw_check10_pdf)
 
     def _save_format(self, fmt, ext, draw_fn):
         if not self.puzzle:
@@ -196,19 +196,19 @@ class CheckXApp(QMainWindow):
             return
         try:
             while True:
-                p = os.path.join(save_dir, f"CheckX_{self.save_counter}{ext}")
-                s = os.path.join(save_dir, f"CheckX_{self.save_counter}_solution{ext}")
+                p = os.path.join(save_dir, f"Check10_{self.save_counter}{ext}")
+                s = os.path.join(save_dir, f"Check10_{self.save_counter}_solution{ext}")
                 if not os.path.exists(p) and not os.path.exists(s):
                     break
                 self.save_counter += 1
             n = self.save_counter
-            temp = "temp_checkx"
+            temp = "temp_check10"
             os.makedirs(temp, exist_ok=True)
-            paths = draw_fn(self.puzzle, os.path.join(temp, f"checkx_{n}"),
+            paths = draw_fn(self.puzzle, os.path.join(temp, f"check10_{n}"),
                             theme=self._selected_theme())
             for img in paths:
                 suffix = "_solution" if "solution" in img else ""
-                shutil.copy2(img, os.path.join(save_dir, f"CheckX_{n}{suffix}{ext}"))
+                shutil.copy2(img, os.path.join(save_dir, f"Check10_{n}{suffix}{ext}"))
             self.save_counter += 1
             QMessageBox.information(self, "OK", f"Sauvegardé dans {save_dir}")
         except Exception as e:
@@ -223,13 +223,13 @@ class CheckXApp(QMainWindow):
             return
         try:
             while True:
-                fp = os.path.join(save_dir, f"checkx_{self.save_counter}.xml")
+                fp = os.path.join(save_dir, f"check10_{self.save_counter}.xml")
                 if not os.path.exists(fp):
                     break
                 self.save_counter += 1
 
             p = self.puzzle
-            root = ET.Element("checkx", rows=str(GRID), cols=str(GRID),
+            root = ET.Element("check10", rows=str(GRID), cols=str(GRID),
                               difficulty=p.get('difficulty', ''),
                               num_blacks=str(p.get('num_blacks', 0)),
                               num_hints=str(p.get('num_hints', 0)))
@@ -317,10 +317,10 @@ class CheckXApp(QMainWindow):
         layout.addWidget(bb, len(color_items), 0, 1, 2)
 
         if dlg.exec_() == QDialog.Accepted and self.puzzle:
-            temp = "temp_checkx"
+            temp = "temp_check10"
             os.makedirs(temp, exist_ok=True)
-            self.image_paths = draw_checkx(
-                self.puzzle, os.path.join(temp, "checkx"), theme=theme
+            self.image_paths = draw_check10(
+                self.puzzle, os.path.join(temp, "check10"), theme=theme
             )
             self._update_display()
 
@@ -333,6 +333,6 @@ class CheckXApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = CheckXApp()
+    window = Check10App()
     window.show()
     sys.exit(app.exec_())
