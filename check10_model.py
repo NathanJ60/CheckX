@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""check10_model.py - Générateur de puzzles Check 10.
+"""check10_model.py - Generateur de puzzles Check 10.
 
 Règles:
 - Grille 8×8, cases blanches à remplir avec 1..6, cases noires = séparateurs.
@@ -9,10 +9,10 @@ Règles:
 
 Contraintes de génération:
 - Entre 10 et 12 cases noires par grille.
-- Les cases BLANCHES doivent rester 4-connectées (pas de région isolée).
+- Les cases BLANCHES doivent rester 4-connectees (pas de région isolée).
 - Au moins 1 ET au plus 2 cases noires par ligne ET par colonne.
 - AUCUN indice sur un segment de longueur 2 (sinon le joueur déduit
-  trivialement l'autre cellule : a+b=10 et a connu → b = 10-a).
+  trivialement l'autre cellule : a+b=10 et a connu -> b = 10-a).
 - Sur un segment de longueur >= 3, pas plus de floor(len/2) indices.
 """
 
@@ -151,7 +151,7 @@ def _discover_random_feasible_pattern(max_tries: int = 50) -> Optional[List[List
         empty = [[0 if not blacks[r][c] else None for c in range(GRID)] for r in range(GRID)]
         domains, seg_tuples = _initial_domains(blacks, segments, cell_to_segs, empty)
         if _propagate(domains, segments, cell_to_segs, seg_tuples):
-            # Propagation n'a pas détecté infaisabilité → probablement OK
+            # Propagation n'a pas détecté infaisabilité -> probablement OK
             return blacks
     return None
 
@@ -172,7 +172,7 @@ def generate_pattern_incremental(num_black_range=(10, 12), max_tries: int = 10) 
     """Construit un pattern de cases noires de manière incrémentale.
 
     Chaque case noire est ajoutée seulement si:
-    - les cases blanches restent 4-connectées
+    - les cases blanches restent 4-connectees
     - le pattern partiel reste faisable (vérifié par propagation)
 
     Validation finale par solveur complet avec petit budget (pour rejeter
@@ -250,7 +250,7 @@ def _pick_pattern() -> Optional[List[List[bool]]]:
     - Max 2 noires par ligne ET par colonne
     - Au moins 1 noire par ligne ET par colonne
     - Pas de 4-adjacence entre noires (touchement diagonal seulement)
-    - Cases blanches 4-connectées
+    - Cases blanches 4-connectees
     - Pattern faisable (au moins une solution CSP valide)
 
     Chaque pattern est totalement neuf (aucun template pré-calculé).
@@ -325,7 +325,7 @@ def _would_exceed_line_cap(blacks, r: int, c: int) -> bool:
 def generate_black_pattern(num_black_range=(10, 12), max_attempts=500) -> Optional[List[List[bool]]]:
     """Place des cases noires aléatoires respectant les contraintes:
     - 10 à 12 cases noires
-    - cases blanches 4-connectées
+    - cases blanches 4-connectees
     - au moins une case noire par ligne et par colonne (améliore feasibilité)
     - AUCUNE paire de cases noires 4-adjacentes (touchement diagonal seulement)
     """
@@ -541,12 +541,12 @@ def _solve(blacks, segments, cell_to_segs, hints, limit=2, randomize=False, max_
 
     bt()
     if aborted[0]:
-        return None  # Budget épuisé : indéterminé
+        return None  # Budget epuise : indéterminé
     return solutions
 
 
 def count_solutions(hints, blacks, segments, cell_to_segs, limit=2, max_nodes=20000):
-    """Retourne le nombre de solutions ou -1 si budget épuisé."""
+    """Retourne le nombre de solutions ou -1 si budget epuise."""
     sols = _solve(blacks, segments, cell_to_segs, hints, limit=limit, randomize=False, max_nodes=max_nodes)
     if sols is None:
         return -1
@@ -570,7 +570,7 @@ def _max_hints_per_segment(segment_len: int) -> int:
     """Nombre max d'indices placés sur un segment.
 
     Règle clé : AUCUN indice sur un segment de longueur 2 (sinon a+b=10 et
-    a connu → b trivialement déduit). Pour les longueurs >= 3, on garde
+    a connu -> b trivialement déduit). Pour les longueurs >= 3, on garde
     floor(len/2) comme auparavant.
     """
     if segment_len == 2:
@@ -597,7 +597,7 @@ def _build_minimal_hints(solution, blacks, segments, cell_to_segs):
         # Trouver les cellules non-forcées
         ambiguous = [(cell, len(d)) for cell, d in domains.items() if len(d) > 1]
         if not ambiguous:
-            # Toutes les cellules sont forcées par propagation → unique
+            # Toutes les cellules sont forcées par propagation -> unique
             placed = sum(1 for r in range(GRID) for c in range(GRID)
                          if not blacks[r][c] and hints[r][c] not in (0, None))
             return hints, placed
@@ -643,7 +643,7 @@ def _pad_hints_to_target(hints, per_seg_counts, solution, blacks, segments,
 
 
 # =============================================================================
-# Génération complète
+# Generation complète
 # =============================================================================
 
 def generate_puzzle(difficulty: str = "moyen",
@@ -680,7 +680,7 @@ def generate_puzzle(difficulty: str = "moyen",
         target = random.randint(max(hint_lo, min_count), hint_hi)
         hints, actual = _pad_hints_to_target(minimal, per_seg, solution,
                                               blacks, segments, cell_to_segs, target)
-        # On tolère actual légèrement ≠ target si la contrainte max/segment bloque
+        # On tolère actual légèrement != target si la contrainte max/segment bloque
         if actual < hint_lo:
             continue
 
@@ -724,27 +724,27 @@ def verify_puzzle(puzzle) -> bool:
     for seg in segments:
         s = sum(sol[r][c] for (r, c) in seg)
         if s != TARGET_SUM:
-            print(f"❌ Segment {seg}: somme {s} ≠ 10")
+            print(f"ECHEC: Segment {seg}: somme {s} != 10")
             return False
     for sid, seg in enumerate(segments):
         nh = sum(1 for (r, c) in seg if hints[r][c] not in (0, None))
         if nh > _max_hints_per_segment(len(seg)):
-            print(f"❌ Segment {sid} len={len(seg)}: {nh} indices (max {_max_hints_per_segment(len(seg))})")
+            print(f"ECHEC: Segment {sid} len={len(seg)}: {nh} indices (max {_max_hints_per_segment(len(seg))})")
             return False
     if not _white_connected(blacks):
-        print("❌ Cases blanches non connectées")
+        print("ECHEC: Cases blanches non connectees")
         return False
     if not _no_adjacent_blacks(blacks):
-        print("❌ Cases noires 4-adjacentes (interdit)")
+        print("ECHEC: Cases noires 4-adjacentes (interdit)")
         return False
     if not _max_2_blacks_per_row_col(blacks):
-        print("❌ Plus de 2 cases noires sur une ligne ou colonne")
+        print("ECHEC: Plus de 2 cases noires sur une ligne ou colonne")
         return False
     n = count_solutions(hints, blacks, segments, cell_to_segs, limit=2)
     if n != 1:
-        print(f"❌ {n} solutions")
+        print(f"ECHEC: {n} solutions")
         return False
-    print(f"✅ Check 10 valide (noires={puzzle['num_blacks']}, indices={puzzle['num_hints']})")
+    print(f"OK: Check 10 valide (noires={puzzle['num_blacks']}, indices={puzzle['num_hints']})")
     return True
 
 
@@ -763,7 +763,7 @@ def print_puzzle(puzzle):
 
 if __name__ == "__main__":
     import time
-    print("Génération Check 10 moyenne...")
+    print("Generation Check 10 moyenne...")
     t0 = time.time()
     p = generate_puzzle("moyen", enforce_unique_history=False)
     print(f"time: {time.time()-t0:.2f}s")
@@ -771,4 +771,4 @@ if __name__ == "__main__":
         print_puzzle(p)
         verify_puzzle(p)
     else:
-        print("❌ Échec")
+        print("ECHEC: Echec")

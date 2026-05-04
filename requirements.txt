@@ -1,0 +1,5 @@
+ortools
+PyQt5
+Pillow
+svgwrite
+reportlab

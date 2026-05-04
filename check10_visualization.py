@@ -4,8 +4,15 @@
 from PIL import Image, ImageDraw, ImageFont
 from enum import Enum
 import os
+import sys
 
 from check10_model import GRID
+
+# Determiner le dossier de base (fonctionne avec PyInstaller)
+if getattr(sys, 'frozen', False):
+    _BASE_DIR = os.path.dirname(sys.executable)
+else:
+    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 try:
     import svgwrite
@@ -68,14 +75,19 @@ BASE_FONT = 48
 
 
 def _load_font(size):
-    for path in [
-        "Arial Bold.ttf", "Arial-Bold.ttf", "ArialBd.ttf",
+    """Charge Arial Bold (Windows, macOS, Linux)."""
+    font_paths = [
+        "C:\\Windows\\Fonts\\arialbd.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
         "/Library/Fonts/Arial Bold.ttf",
         "/Library/Fonts/Arial.ttf",
-        "/System/Library/Fonts/Helvetica.ttc",
-    ]:
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "Arial Bold.ttf", "Arial-Bold.ttf", "ArialBd.ttf",
+    ]
+    for fpath in font_paths:
         try:
-            return ImageFont.truetype(path, size)
+            return ImageFont.truetype(fpath, size)
         except Exception:
             continue
     return ImageFont.load_default()
@@ -137,7 +149,7 @@ def draw_check10(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
 
         img.save(path)
         image_paths.append(path)
-        print(f"Image '{label}' générée : {path}")
+        print(f"Image '{label}' generee : {path}")
 
     return image_paths
 
@@ -190,7 +202,7 @@ def draw_check10_svg(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
                          fill="none", stroke=palette["border"], stroke_width=5))
         dwg.save()
         image_paths.append(path)
-        print(f"SVG '{label}' généré : {path}")
+        print(f"SVG '{label}' genere : {path}")
 
     return image_paths
 
@@ -208,7 +220,7 @@ def draw_check10_pdf(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
     hints = puzzle['hints']
 
     # Taille cible ~10 cm
-    target_size = 10 * 28.35  # cm → pt
+    target_size = 10 * 28.35  # cm -> pt
     pdf_scale = target_size / (BASE_MARGIN * 2 + BASE_CELL * GRID)
     cell = BASE_CELL * pdf_scale
     margin = BASE_MARGIN * pdf_scale
@@ -250,6 +262,6 @@ def draw_check10_pdf(puzzle, base_path="check10_grid", theme=Theme.CLASSIC):
 
         c.save()
         image_paths.append(path)
-        print(f"PDF '{label}' généré : {path}")
+        print(f"PDF '{label}' genere : {path}")
 
     return image_paths

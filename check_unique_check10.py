@@ -2,7 +2,7 @@
 """Vérification d'unicité dédiée pour Check 10.
 
 Module séparé (comme check_unique_go8.py pour 8-GO), il fournit une API
-dédiée pour vérifier qu'un puzzle Check 10 a **exactement une solution**
+dédiée pour verifier qu'un puzzle Check 10 a **exactement une solution**
 (pas zéro, pas plusieurs), indépendamment du générateur.
 
 Approche en deux phases:
@@ -27,21 +27,21 @@ def check_uniqueness(blacks, hints, original_solution=None,
         blacks: grille booléenne (True = case noire)
         hints: grille d'indices (0 = inconnu, 1..6 = valeur, None = case noire)
         original_solution: solution attendue (optionnel) — si fournie, on
-            vérifie aussi que l'unique solution trouvée correspond.
+            verifie aussi que l'unique solution trouvee correspond.
         timeout: budget temps total (secondes)
         verbose: affichage détaillé
 
     Returns:
-        True  → solution unique (et == original_solution si fourni)
-        False → 0 ou ≥2 solutions, ou diffère de l'originale
-        None  → indéterminé (budget épuisé)
+        True  -> solution unique (et == original_solution si fourni)
+        False -> 0 ou ≥2 solutions, ou differe de l'originale
+        None  -> indéterminé (budget epuise)
     """
     t0 = time.time()
 
     segments, cell_to_segs = compute_segments(blacks)
     if not segments:
         if verbose:
-            print("  [UNICITÉ] Aucun segment à vérifier")
+            print("  [UNICITE] Aucun segment à verifier")
         return True
 
     num_hints = sum(1 for r in range(GRID) for c in range(GRID)
@@ -51,7 +51,7 @@ def check_uniqueness(blacks, hints, original_solution=None,
     num_blacks = GRID * GRID - num_whites
 
     if verbose:
-        print(f"  [UNICITÉ] Grille {GRID}×{GRID}: {num_blacks} noires, "
+        print(f"  [UNICITE] Grille {GRID}×{GRID}: {num_blacks} noires, "
               f"{num_whites} blanches, {num_hints} indices visibles, "
               f"{len(segments)} segments")
 
@@ -62,18 +62,18 @@ def check_uniqueness(blacks, hints, original_solution=None,
 
     if solutions is None:
         if verbose:
-            print("  [UNICITÉ] ? Budget épuisé (phase 1)")
+            print("  [UNICITE] ? Budget epuise (phase 1)")
         return None
 
     if not solutions:
         if verbose:
-            print("  [UNICITÉ] ✗ Aucune solution")
+            print("  [UNICITE] ECHEC: Aucune solution")
         return False
 
     sol1 = solutions[0]
 
     if verbose:
-        print(f"  [UNICITÉ] ✓ Solution trouvée en {time.time()-t0:.3f}s")
+        print(f"  [UNICITE] OK: Solution trouvee en {time.time()-t0:.3f}s")
 
     # Vérifier correspondance avec la solution attendue
     if original_solution is not None:
@@ -84,14 +84,14 @@ def check_uniqueness(blacks, hints, original_solution=None,
         )
         if not matches:
             if verbose:
-                print("  [UNICITÉ] ✗ Solution diffère de l'originale")
+                print("  [UNICITE] ECHEC: Solution differe de l'originale")
             return False
 
     # Phase 2 : chercher une 2e solution via count_solutions(limit=2)
     remaining = timeout - (time.time() - t0)
     if remaining <= 0:
         if verbose:
-            print("  [UNICITÉ] ? Timeout avant phase 2")
+            print("  [UNICITE] ? Timeout avant phase 2")
         return None
 
     budget2 = int(remaining * 100000)
@@ -100,30 +100,30 @@ def check_uniqueness(blacks, hints, original_solution=None,
 
     if n == -1:
         if verbose:
-            print("  [UNICITÉ] ? Budget épuisé (phase 2)")
+            print("  [UNICITE] ? Budget epuise (phase 2)")
         return None
 
     if n >= 2:
         if verbose:
-            print("  [UNICITÉ] ✗ 2e solution trouvée → NON UNIQUE")
+            print("  [UNICITE] ECHEC: 2e solution trouvee -> NON UNIQUE")
         return False
 
     if n == 0:
         if verbose:
-            print("  [UNICITÉ] ✗ Paradoxe : 0 solution phase 2 ?")
+            print("  [UNICITE] ECHEC: Paradoxe : 0 solution phase 2 ?")
         return False
 
     if verbose:
-        print(f"  [UNICITÉ] ✅ UNIQUE ({time.time()-t0:.3f}s)")
+        print(f"  [UNICITE] OK: UNIQUE ({time.time()-t0:.3f}s)")
     return True
 
 
 def verify_constraints(puzzle, verbose: bool = False):
-    """Vérifie que toutes les contraintes Check 10 sont respectées.
+    """Vérifie que toutes les contraintes Check 10 sont respectees.
 
     Contraintes:
     1. Entre 10 et 12 cases noires
-    2. Cases blanches 4-connectées
+    2. Cases blanches 4-connectees
     3. Aucune paire de cases noires 4-adjacentes (touchement diagonal seul)
     4. Tout segment ≥2 cases somme à 10 (via la solution)
     5. Max floor(len/2) indices par segment
@@ -145,7 +145,7 @@ def verify_constraints(puzzle, verbose: bool = False):
 
     # [2] Connectivité des blanches
     if not _white_connected(blacks):
-        errors.append("cases blanches non 4-connectées")
+        errors.append("cases blanches non 4-connectees")
 
     # [3] Pas de cases noires 4-adjacentes
     if not _no_adjacent_blacks(blacks):
@@ -155,7 +155,7 @@ def verify_constraints(puzzle, verbose: bool = False):
     for sid, seg in enumerate(segments):
         s = sum(sol[r][c] for (r, c) in seg)
         if s != TARGET_SUM:
-            errors.append(f"segment {sid} (len {len(seg)}) somme={s} ≠ 10")
+            errors.append(f"segment {sid} (len {len(seg)}) somme={s} != 10")
 
     # [4] Max indices par segment
     for sid, seg in enumerate(segments):
@@ -172,11 +172,11 @@ def verify_constraints(puzzle, verbose: bool = False):
 
     if verbose:
         if errors:
-            print("  ❌ Erreurs:")
+            print("  ECHEC: Erreurs:")
             for e in errors:
                 print(f"    - {e}")
         else:
-            print("  ✅ Toutes les contraintes respectées")
+            print("  OK: Toutes les contraintes respectees")
 
     return len(errors) == 0, errors
 
@@ -192,10 +192,10 @@ if __name__ == "__main__":
         print(f"\n[{diff.upper()}]")
         p = generate_puzzle(diff, enforce_unique_history=False)
         if not p:
-            print(f"  ❌ Génération échouée")
+            print(f"  ECHEC: Generation echouee")
             continue
 
         ok, errors = verify_constraints(p, verbose=True)
-        status = "✅" if ok else "❌"
+        status = "OK:" if ok else "ECHEC:"
         print(f"  {status} {diff}: "
               f"{p['num_blacks']} noires, {p['num_hints']} indices")

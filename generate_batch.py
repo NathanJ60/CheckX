@@ -24,7 +24,7 @@ def run(n_per_level: int = 5, out_dir: str = "output"):
             p = generate_puzzle(difficulty, enforce_unique_history=True)
             dt = time.time() - t0
             if p is None:
-                print(f"  [{i+1:02d}] ❌ Échec ({dt:.1f}s)")
+                print(f"  [{i+1:02d}] ECHEC: Echec ({dt:.1f}s)")
                 continue
 
             valid = verify_puzzle(p)
@@ -38,7 +38,7 @@ def run(n_per_level: int = 5, out_dir: str = "output"):
             base = os.path.join(out_dir, f"Check10_{difficulty}_{i+1:02d}")
             draw_check10(p, base)
 
-            status = "✅" if (valid and max2_ok and len2_hints == 0) else "❌"
+            status = "OK:" if (valid and max2_ok and len2_hints == 0) else "ECHEC:"
             print(f"  [{i+1:02d}] {status} noires={p['num_blacks']} indices={p['num_hints']} "
                   f"max2={max2_ok} len2_hints={len2_hints} ({dt:.1f}s)")
             results.append({
