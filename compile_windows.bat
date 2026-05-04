@@ -4,6 +4,21 @@ echo    Compilation Check 10 pour Windows
 echo ============================================
 echo.
 
+REM Verifier Python
+py --version >nul 2>&1
+if errorlevel 1 (
+    echo ECHEC : Python non trouve. Installez Python depuis python.org
+    pause
+    exit /b 1
+)
+
+REM Installation des dependances
+echo Installation des dependances...
+py -m pip install --upgrade pip >nul
+py -m pip install -r requirements.txt
+py -m pip install pyinstaller
+echo.
+
 REM Nettoyage
 echo Nettoyage des anciens builds...
 rmdir /S /Q build 2>nul
